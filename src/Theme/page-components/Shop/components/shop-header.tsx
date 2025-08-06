@@ -29,7 +29,7 @@ export default function ShopHeader({
       </div>
 
       <div className="flex items-center mt-4 md:mt-0">
-        <div className="relative mr-2">
+        {/* <div className="relative mr-2">
           <select className="appearance-none border border-gray-300 rounded px-4 py-2 pr-8 bg-white text-sm uppercase">
             <option>DEFAULT SORTING</option>
             <option>PRICE: LOW TO HIGH</option>
@@ -48,7 +48,7 @@ export default function ShopHeader({
         </div>
         <button className="bg-black text-white px-6 py-2 text-sm uppercase">
           FILTER
-        </button>
+        </button> */}
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export async function generateMetadata() {
   const meta = await getPageMetadata("shop");
 
   return {
-    title: meta?.title || "Default Title",
+    title: meta?.title || "Shop Page",
     description: meta?.description || "Default Description",
     keywords: meta?.keyword || "",
   };

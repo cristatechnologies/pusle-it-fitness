@@ -59,7 +59,7 @@ const Footer = () => {
                 <ul className="space-y-2 text-gray-600">
                   {column?.col_links.map((link) => (
                     <li key={link.id}>
-                      <a href={link.link} className="hover:text-black">
+                      <a href={`/${link.link}`} className="hover:text-black">
                         {link.title}
                       </a>
                     </li>

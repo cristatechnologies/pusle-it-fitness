@@ -32,6 +32,9 @@ export default function CategoryPage({
       : []),
   ];
 
+
+  console.log("Category Page Data:", categoryName);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <ShopHeader

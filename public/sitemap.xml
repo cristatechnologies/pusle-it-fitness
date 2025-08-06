@@ -64,11 +64,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pulseitfitness.com/test-log</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://pulseitfitness.com/shop/fitness</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
