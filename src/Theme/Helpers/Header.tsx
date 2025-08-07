@@ -126,7 +126,7 @@ export default function Header() {
                 ABOUT US
               </Link>
               <Link
-                href="/blog"
+                href="/blogs"
                 className="py-4  cursor-pointer  text-[12px] font-semibold"
               >
                BLOGS
