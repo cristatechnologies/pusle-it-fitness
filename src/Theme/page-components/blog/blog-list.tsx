@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
 import {
   fetchBlogCategories,
   fetchBlogs,
-  BlogCategory,
-  Blog,
+
   searchBlogs,
 } from "@/services/blog";
+import { BlogCategoryResponse,BlogByCategoryResponse } from "@/types/blog.interface";
 import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/utils/format-date";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -25,8 +25,8 @@ interface PaginationData {
 }
 
 export default function BlogList() {
-  const [categories, setCategories] = useState<BlogCategory[]>([]);
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [categories, setCategories] = useState<BlogCategoryResponse>();
+  const [blogs, setBlogs] = useState<BlogByCategoryResponse>();
   const [pagination, setPagination] = useState<PaginationData>({
     currentPage: 1,
     lastPage: 1,
@@ -46,7 +46,7 @@ export default function BlogList() {
 
         // Fetch categories
         const categoriesData = await fetchBlogCategories();
-        setCategories(categoriesData.categories);
+        setCategories(categoriesData);
 
         // Check if category is in URL params
         const categoryIdFromParam = categoryParam
@@ -56,7 +56,7 @@ export default function BlogList() {
 
         // Fetch blogs
         const blogsData = await fetchBlogs(1, categoryIdFromParam || undefined);
-        setBlogs(blogsData.blogs.data);
+        setBlogs(blogsData);
         setPagination({
           currentPage: blogsData.blogs.current_page,
           lastPage: blogsData.blogs.last_page,
@@ -86,7 +86,7 @@ export default function BlogList() {
         1,
         selectedCategory || undefined
       );
-      setBlogs(blogsData.blogs.data);
+      setBlogs(blogsData);
       setPagination({
         currentPage: blogsData.blogs.current_page,
         lastPage: blogsData.blogs.last_page,
@@ -109,7 +109,7 @@ export default function BlogList() {
         ? await searchBlogs(searchQuery, 1, categoryId || undefined)
         : await fetchBlogs(1, categoryId || undefined);
 
-      setBlogs(blogsData.blogs.data);
+      setBlogs(blogsData);
       setPagination({
         currentPage: blogsData.blogs.current_page,
         lastPage: blogsData.blogs.last_page,
@@ -192,7 +192,7 @@ export default function BlogList() {
                   All Categories
                 </button>
               </li>
-              {categories.map((category) => (
+              {categories?.categories.map((category) => (
                 <li key={category.id}>
                   <button
                     onClick={() => handleCategorySelect(category.id)}
@@ -212,7 +212,7 @@ export default function BlogList() {
 
         {/* Blog Posts */}
         <div className="lg:col-span-3">
-          {blogs.length === 0 ? (
+          {blogs?.blogs.data.length === 0 ? (
             <div className="text-center py-12">
               <h3 className="text-xl font-medium">
                 {searchQuery
@@ -236,7 +236,7 @@ export default function BlogList() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {blogs.map((blog) => (
+                {blogs?.blogs.data.map((blog) => (
                   <div
                     key={blog.id}
                     className="bg-white shadow-sm rounded-lg overflow-hidden"

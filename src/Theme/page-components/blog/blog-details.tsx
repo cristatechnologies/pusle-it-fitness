@@ -30,8 +30,13 @@ interface Blog {
   updated_at: string;
 }
 
+
+interface BlogResponse {
+  blog: Blog;
+}
+
 export default function BlogDetail({ slug }: BlogDetailProps) {
-  const [data, setData] = useState<Blog | null>(null);
+  const [data, setData] = useState<BlogResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +60,9 @@ export default function BlogDetail({ slug }: BlogDetailProps) {
   if (loading) {
     return <div />; // Create a skeleton loading component
   }
+
+
+  console.log(data)
 
   if (error) {
     return (
@@ -100,8 +108,8 @@ export default function BlogDetail({ slug }: BlogDetailProps) {
         <div className="mb-8">
           <div className="relative h-96 w-full rounded-lg overflow-hidden mb-6">
             <Image
-              src={`${process.env.NEXT_PUBLIC_BASE_URL}${data.image}`}
-              alt={data.title}
+              src={`${process.env.NEXT_PUBLIC_BASE_URL}${data.blog.image}`}
+              alt={data.blog.title}
               fill
               className="object-cover"
               priority
@@ -110,17 +118,17 @@ export default function BlogDetail({ slug }: BlogDetailProps) {
 
           <div className="flex justify-between items-center mb-4">
             <span className="text-sm text-gray-500">
-              {formatDate(data.created_at)}
+              {formatDate(data.blog.created_at)}
             </span>
-            <span className="text-sm text-gray-500">{data.views} views</span>
+            <span className="text-sm text-gray-500">{data.blog.views} views</span>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold mb-4">{data.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-4">{data.blog.title}</h1>
         </div>
 
         <div
           className="prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: data.description }}
+          dangerouslySetInnerHTML={{ __html: data.blog.description }}
         />
       </div>
     </div>

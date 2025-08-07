@@ -19,7 +19,8 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ category: string }>;
-}): Promise<Metadata> {
+}): Promise<Metadata> 
+{
   // Await the params since they're now a Promise in Next.js 15
   const resolvedParams = await params;
 
@@ -27,11 +28,13 @@ export async function generateMetadata({
     const data = await getData(resolvedParams.category);
     const seoSetting = data.seoSetting;
 
+
+    console.log("category page seo",seoSetting)
     return {
-      title: seoSetting?.seo_title || "Shop Pulseit Fitness",
+      title: seoSetting?.seo_title || "Shop  Fitness",
       description: seoSetting?.seo_description || "Shop Pulseit Fitness",
       robots: "index,follow",
-      // You can add more metadata fields as needed
+      
       // openGraph: {
       //   title: seoSetting?.seo_title || "Shop Pulseit Fitness",
       //   description: seoSetting?.seo_description || "Shop Pulseit Fitness",

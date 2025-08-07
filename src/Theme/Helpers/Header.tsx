@@ -126,6 +126,12 @@ export default function Header() {
                 ABOUT US
               </Link>
               <Link
+                href="/blog"
+                className="py-4  cursor-pointer  text-[12px] font-semibold"
+              >
+               BLOGS
+              </Link>
+              <Link
                 href="/contact-us"
                 className="py-4  cursor-pointer  text-[12px] font-semibold"
               >
