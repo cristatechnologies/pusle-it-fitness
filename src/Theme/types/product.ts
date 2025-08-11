@@ -9,6 +9,7 @@ export type Product = {
   offer_price: number | null;
   short_description: string;
   long_description: string;
+  video_link:string | null;
   sku: string;
   seo_title: string;
   seo_description: string;

@@ -12,9 +12,8 @@ const nextConfig = {
   // swcMinify: true,
   devIndicators: false,
   images: {
-    domains: [`${hostname}`],
+    domains: [`${hostname}`, "img.youtube.com"],
   },
-
 };
 
 module.exports = nextConfig;

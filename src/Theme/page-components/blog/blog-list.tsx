@@ -241,7 +241,7 @@ export default function BlogList() {
                     key={blog.id}
                     className="bg-white shadow-sm rounded-lg overflow-hidden"
                   >
-                    <Link href={`/blog/${blog.slug}`}>
+                    <Link href={`/blogs/${blog.slug}`}>
                       <div className="relative h-48 w-full">
                         <Image
                           src={`${process.env.NEXT_PUBLIC_BASE_URL}${blog.image}`}

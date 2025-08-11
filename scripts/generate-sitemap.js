@@ -7,7 +7,7 @@ dotenv.config();
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const FRONT_URL = "https://pulseitfitness.com";
-
+const BLOG_API = `${BASE_URL}api/blog`;
 const staticRoutes = [
   "",
   "/shop",
@@ -23,6 +23,34 @@ const staticRoutes = [
   "/sign-in",
   "/sign-up",
 ];
+
+
+async function fetchAllBlogs() {
+  let allBlogs = [];
+  let currentPage = 1;
+  let totalPages = 1;
+
+  try {
+    // First request to get pagination info
+    const firstPageRes = await axios.get(`${BLOG_API}?page=${currentPage}`);
+    const firstPageData = firstPageRes.data.blogs;
+    allBlogs = [...firstPageData.data];
+    totalPages = firstPageData.last_page;
+
+    // Remaining pages
+    while (currentPage < totalPages) {
+      currentPage++;
+      const res = await axios.get(`${BLOG_API}?page=${currentPage}`);
+      allBlogs = [...allBlogs, ...res.data.blogs.data];
+    }
+
+    // Return blog routes
+    return allBlogs.map((blog) => `/blogs/${blog.slug}`);
+  } catch (err) {
+    console.error("❌ Error fetching blogs:", err);
+    return [];
+  }
+}
 
 // Fetch dynamic CMS pages
 async function fetchCustomPages() {
@@ -138,10 +166,13 @@ ${xmlItems}
 async function buildSitemap() {
   const customPages = await fetchCustomPages();
   const productAndCategoryRoutes = await fetchProductAndCategoryRoutes();
+  const blogRoutes = await fetchAllBlogs();
+
   const allRoutes = [
     ...staticRoutes,
     ...customPages,
     ...productAndCategoryRoutes,
+    ...blogRoutes,
   ];
 
   const sitemap = generateXML(allRoutes);

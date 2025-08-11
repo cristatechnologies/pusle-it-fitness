@@ -58,7 +58,7 @@ export default function ProductPage({ productData }: ProductPageProps) {
   
 
   const [quantity, setQuantity] = useState<number>(1);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
   const [activeTab, setActiveTab] = useState<
     "description" | "additional" | "reviews"
   >("description");
@@ -81,12 +81,25 @@ export default function ProductPage({ productData }: ProductPageProps) {
   >({});
   const [variantError, setVariantError] = useState<string | null>(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+ 
+  
+
   // Create gallery images array from product data
-  const galleryImages = [
-    product.thumb_image,
-    ...(gellery?.map((item) => item.image) || []),
-  ];
-  const selectedImage = galleryImages[currentImageIndex];
+const galleryItems = [
+  // First main product image
+  { type: "image", url: product.thumb_image },
+
+  // Insert video if available
+  ...(product.video_link ? [{ type: "video", url: product.video_link }] : []),
+
+  // Then all the remaining gallery images
+  ...(gellery?.map((item) => ({ type: "image", url: item.image })) || []),
+];
+
+
+ const [currentIndex, setCurrentIndex] = useState(0);
+ const selectedItem = galleryItems[currentIndex];
+
   const cart = useAppSelector((state) => state.cart);
  
 
@@ -97,23 +110,29 @@ export default function ProductPage({ productData }: ProductPageProps) {
     selectedVariantItemIds
   );
   const { currency_icon } = settings();
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
-  };
+const nextImage = () => {
+  setCurrentIndex((prev) => (prev + 1) % galleryItems.length);
+};
 
-  const prevImage = () => {
-    setCurrentImageIndex(
-      (prev) => (prev - 1 + galleryImages.length) % galleryImages.length
-    );
-  };
+const prevImage = () => {
+  setCurrentIndex(
+    (prev) => (prev - 1 + galleryItems.length) % galleryItems.length
+  );
+};
 
-  const handleThumbnailClick = (index: number) => {
-    setCurrentImageIndex(index);
-  };
+const handleThumbnailClick = (index: number) => {
+  setCurrentIndex(index);
+};
 
   // Get color and size variants
 
-  
+  function extractYouTubeId(url: string) {
+    const match = url.match(
+      /(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([^\s&?/]+)/
+    );
+    return match ? match[1] : "";
+  }
+
 
 
 const toggleWishlist = async () => {
@@ -272,16 +291,28 @@ const toggleWishlist = async () => {
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
-              <Image
-                src={
-                  `${process.env.NEXT_PUBLIC_BASE_URL}${selectedImage}` ||
-                  "/placeholder.svg"
-                }
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-              />
+              {selectedItem.type === "image" ? (
+                <Image
+                  src={
+                    `${process.env.NEXT_PUBLIC_BASE_URL}${selectedItem.url}` ||
+                    "/placeholder.svg"
+                  }
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={selectedItem.url}
+                  title="Product Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+
               <button
                 onClick={nextImage}
                 className="absolute right-2 cursor-pointer top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-[var(--primary-color)] border border-gray-200 flex items-center justify-center"
@@ -290,26 +321,36 @@ const toggleWishlist = async () => {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex space-x-2 overflow-x-auto">
-              {galleryImages.map((image, index) => (
+
+            <div className="flex overflow-x-auto space-x-2 snap-x snap-mandatory scrollbar-hide">
+              {galleryItems.map((item, index) => (
                 <div
                   key={index}
-                  className={`relative w-20 h-20 cursor-pointer border cursor-pointer ${
-                    currentImageIndex === index
-                      ? "border-black"
-                      : "border-gray-200"
+                  className={`relative w-20 h-20 flex-shrink-0 snap-center cursor-pointer border ${
+                    currentIndex === index ? "border-black" : "border-gray-200"
                   }`}
                   onClick={() => handleThumbnailClick(index)}
                 >
-                  <Image
-                    src={
-                      `${process.env.NEXT_PUBLIC_BASE_URL}${image}` ||
-                      "/placeholder.svg"
-                    }
-                    alt={`Thumbnail ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
+                  {item.type === "image" ? (
+                    <Image
+                      src={
+                        `${process.env.NEXT_PUBLIC_BASE_URL}${item.url}` ||
+                        "/placeholder.svg"
+                      }
+                      alt={`Thumbnail ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={`https://img.youtube.com/vi/${extractYouTubeId(
+                        item.url
+                      )}/hqdefault.jpg`}
+                      alt="Video thumbnail"
+                      fill
+                      className="object-cover"
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -541,42 +582,42 @@ const toggleWishlist = async () => {
           {/* Tab Content */}
           <div className="py-8 w-full">
             {/* Description Tab */}
-    {/* Description Tab */}
-{activeTab === "description" && (
-  <div className="w-full px-4 md:px-0">
-    <div 
-      className="text-gray-700 w-full max-w-full"
-      dangerouslySetInnerHTML={{
-        __html: product.long_description,
-      }}
-      style={{
-        overflowWrap: 'break-word',
-        wordBreak: 'break-word',
-        maxWidth: '100%',
-      }}
-    />
-    <ul className="mt-6 space-y-2 list-none">
-      {product.height && (
-        <li className="flex items-center">
-          <span className="text-gray-500 mr-2">•</span>
-          Height: {product.height} cm
-        </li>
-      )}
-      {product.width && (
-        <li className="flex items-center">
-          <span className="text-gray-500 mr-2">•</span>
-          Width: {product.width} cm
-        </li>
-      )}
-      {product.weight && (
-        <li className="flex items-center">
-          <span className="text-gray-500 mr-2">•</span>
-          Weight: {product.weight} kg
-        </li>
-      )}
-    </ul>
-  </div>
-)}
+            {/* Description Tab */}
+            {activeTab === "description" && (
+              <div className="w-full px-4 md:px-0">
+                <div
+                  className="text-gray-700 w-full max-w-full"
+                  dangerouslySetInnerHTML={{
+                    __html: product.long_description,
+                  }}
+                  style={{
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word",
+                    maxWidth: "100%",
+                  }}
+                />
+                <ul className="mt-6 space-y-2 list-none">
+                  {product.height && (
+                    <li className="flex items-center">
+                      <span className="text-gray-500 mr-2">•</span>
+                      Height: {product.height} cm
+                    </li>
+                  )}
+                  {product.width && (
+                    <li className="flex items-center">
+                      <span className="text-gray-500 mr-2">•</span>
+                      Width: {product.width} cm
+                    </li>
+                  )}
+                  {product.weight && (
+                    <li className="flex items-center">
+                      <span className="text-gray-500 mr-2">•</span>
+                      Weight: {product.weight} kg
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
 
             {/* Additional Information Tab */}
             {activeTab === "additional" && (

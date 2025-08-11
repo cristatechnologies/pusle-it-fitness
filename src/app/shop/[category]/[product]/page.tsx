@@ -1,83 +1,105 @@
 import { notFound } from "next/navigation";
 import ProductPage from "@/Theme/page-components/Shop/Product-Page/page";
-import { Metadata } from "next";
-import { ProductResponse } from "@/Theme/types/product";
+import type { Metadata } from "next";
+import type { ProductResponse } from "@/Theme/types/product";
 
-export interface ProductPageProps {
-  productData: ProductResponse;
+export const revalidate = 3600; // 1 hour
+
+interface ProductMeta {
+  slug: string;
+  seo_title?: string;
+  seo_description?: string;
+  category_slug: string;
 }
 
+// cache variable so we don't re-fetch every call
+let allProductsCache: ProductMeta[] | null = null;
 
+// Fetch once & cache
+async function fetchAllProductsMeta(): Promise<ProductMeta[]> {
+  if (allProductsCache) return allProductsCache;
 
-async function getProductData(product: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}api/product/${product}`,
-   
+    "https://s1.shopico.in/pulseit2/api/user/metadata?product-all=true",
+    { next: { revalidate } }
   );
 
-  if (!res.ok) throw new Error("Failed to fetch product");
-  return res.json();
+  if (!res.ok) throw new Error("Failed to fetch all products metadata");
+  const data = await res.json();
+
+  const products = data.metadata || [];
+  allProductsCache = products;
+  return products;
 }
 
+// Pre-render only valid products
+export async function generateStaticParams() {
+  const products = await fetchAllProductsMeta();
 
+  const validProducts = products.filter((p) => p.category_slug && p.slug);
 
+  console.log("Static paths count:", validProducts.length);
+
+  return validProducts.map((p) => ({
+    category: p.category_slug,
+    product: p.slug,
+  }));
+}
+
+// Metadata from pre-fetched data
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ product: string }>;
+  params: Promise<{ category: string; product: string }>;
 }): Promise<Metadata> {
   const resolvedParams = await params;
+  const products = await fetchAllProductsMeta();
+  
 
-  try {
-    const productData: ProductResponse = await getProductData(
-      resolvedParams.product
-    );
+  // Store the awaited params values in variables
+  const { category, product } = resolvedParams;
 
-    if (!productData?.product) {
-      return {
-        title: "Product Not Found",
-        description: "The requested product could not be found.",
-      };
-    }
+  const meta = products.find(
+    (p) => p.slug === product && p.category_slug === category
+  );
 
-    const { seo_title, seo_description, thumb_image, name, short_description } =
-      productData.product;
-
+  if (!meta) {
     return {
-      title: seo_title || name,
-      description: seo_description || short_description,
-      openGraph: {
-        title: seo_title || name,
-        description: seo_description || short_description,
-        images: thumb_image
-          ? [`${process.env.NEXT_PUBLIC_BASE_URL}${thumb_image}`]
-          : [],
-        type: "website",
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: seo_title || name,
-        description: seo_description || short_description,
-        images: thumb_image
-          ? [`${process.env.NEXT_PUBLIC_BASE_URL}${thumb_image}`]
-          : [],
-      },
-    };
-  } catch (error) {
-    console.log("Error generating metadata:", error);
-    return {
-      title: "Product",
-      description: "Product page",
+      title: "Product Not Found",
+      description: "The requested product could not be found.",
     };
   }
+
+  return {
+    title: meta.seo_title || "Product",
+    description: meta.seo_description || "",
+    openGraph: {
+      title: meta.seo_title || "Product",
+      description: meta.seo_description || "",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: meta.seo_title || "Product",
+      description: meta.seo_description || "",
+    },
+  };
+}
+
+// Still fetch full product data for rendering page content
+async function getProductData(product: string): Promise<ProductResponse> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}api/product/${product}`,
+    { next: { revalidate } }
+  );
+  if (!res.ok) throw new Error("Failed to fetch product");
+  return res.json();
 }
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ product: string }>;
+  params: Promise<{ category: string; product: string }>;
 }) {
-  // Await the params since they're now a Promise in Next.js 15
   const resolvedParams = await params;
   let productData: ProductResponse;
 
@@ -85,7 +107,7 @@ export default async function Page({
     productData = await getProductData(resolvedParams.product);
     if (!productData?.product) notFound();
   } catch (error) {
-    console.log("Error fetching product:", error);
+    console.error("Error fetching product:", error);
     notFound();
   }
 

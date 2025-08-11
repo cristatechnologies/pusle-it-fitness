@@ -97,7 +97,7 @@ export default function BlogDetail({ slug }: BlogDetailProps) {
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <Link
-          href="/blog"
+          href="/blogs"
           className="flex items-center text-sm text-gray-600 mb-6 hover:text-[var(--hover-color)]"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
