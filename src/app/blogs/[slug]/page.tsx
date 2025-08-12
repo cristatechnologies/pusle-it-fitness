@@ -60,8 +60,8 @@ export async function generateMetadata({
 
     // Get blog metadata from the metadata API first
     const blogs = await fetchAllBlogsMeta();
-    console.log("blogs metadata", blogs);
-    console.log("params data", resolvedParams.slug);
+    // console.log("blogs metadata", blogs);
+    // console.log("params data", resolvedParams.slug);
 
     const blogMeta = blogs.find((b) => b.slug === resolvedParams.slug);
 

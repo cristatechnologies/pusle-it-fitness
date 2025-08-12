@@ -59,18 +59,17 @@ async function getData(category?: string, page?: number) {
 export async function generateMetadata({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }): Promise<Metadata> {
+  const { category } = await params;
   try {
-    // Get category metadata from the metadata API
     const categories = await fetchAllCategoriesMeta();
-    const categoryMeta = categories.find((c) => c.slug === params.category);
+    const categoryMeta = categories.find((c) => c.slug === category);
 
-    // Fallback: try to get seoSetting from the existing API if metadata API doesn't have the data
     let fallbackSeoSetting = null;
     if (!categoryMeta?.meta_title && !categoryMeta?.meta_description) {
       try {
-        const data = await getData(params.category);
+        const data = await getData(category);
         fallbackSeoSetting = data.seoSetting;
       } catch (error) {
         console.log("Failed to fetch fallback SEO data:", error);
@@ -81,27 +80,20 @@ export async function generateMetadata({
       categoryMeta?.meta_title ||
       fallbackSeoSetting?.seo_title ||
       `${
-        params.category.charAt(0).toUpperCase() + params.category.slice(1)
+        category.charAt(0).toUpperCase() + category.slice(1)
       } - Shop Pulseit Fitness`;
 
     const description =
       categoryMeta?.meta_description ||
       fallbackSeoSetting?.seo_description ||
-      `Browse our ${params.category} collection - Shop Pulseit Fitness`;
+      `Browse our ${category} collection - Shop Pulseit Fitness`;
 
     return {
       title,
       description,
       robots: "index,follow",
-      openGraph: {
-        title,
-        description,
-      },
-      twitter: {
-        card: "summary_large_image",
-        title,
-        description,
-      },
+      openGraph: { title, description },
+      twitter: { card: "summary_large_image", title, description },
     };
   } catch (error) {
     console.error("Error generating metadata:", error);
@@ -117,13 +109,16 @@ export default async function Page({
   params,
   searchParams,
 }: {
-  params: { category: string };
-  searchParams: { page?: string };
+  params: Promise<{ category: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const { category } = await params; // ✅
+  const { page } = await searchParams; // ✅
+
   try {
-    const page = Number(searchParams.page) || 1;
-    const data = await getData(params.category, page);
-    return <CategoryPage data={data} categorySlug={params.category} />;
+    const currentPage = Number(page) || 1;
+    const data = await getData(category, currentPage);
+    return <CategoryPage data={data} categorySlug={category} />;
   } catch (error) {
     console.log(error);
     notFound();
