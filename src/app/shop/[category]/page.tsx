@@ -36,17 +36,17 @@ export async function generateStaticParams() {
 
   const validCategories = categories.filter((c) => c.slug);
 
-  console.log("Static category paths count:", validCategories.length);
-
   return validCategories.map((c) => ({
     category: c.slug,
   }));
 }
 
-async function getData(category?: string) {
+async function getData(category?: string, page?: number) {
   const url = category
-    ? `${process.env.NEXT_PUBLIC_BASE_URL}api/product?category=${category}`
-    : `${process.env.NEXT_PUBLIC_BASE_URL}api/product`;
+    ? `${
+        process.env.NEXT_PUBLIC_BASE_URL
+      }api/product?category=${category}&page=${page || 1}`
+    : `${process.env.NEXT_PUBLIC_BASE_URL}api/product?page=${page || 1}`;
 
   const res = await fetch(url, { next: { revalidate: 3600 } });
 
@@ -59,45 +59,35 @@ async function getData(category?: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string }>;
+  params: { category: string };
 }): Promise<Metadata> {
-  const resolvedParams = await params;
-
   try {
     // Get category metadata from the metadata API
     const categories = await fetchAllCategoriesMeta();
-    console.log("categories metadata", categories);
-    console.log("params data", resolvedParams.category);
-
-    const categoryMeta = categories.find(
-      (c) => c.slug === resolvedParams.category
-    );
+    const categoryMeta = categories.find((c) => c.slug === params.category);
 
     // Fallback: try to get seoSetting from the existing API if metadata API doesn't have the data
     let fallbackSeoSetting = null;
     if (!categoryMeta?.meta_title && !categoryMeta?.meta_description) {
       try {
-        const data = await getData(resolvedParams.category);
+        const data = await getData(params.category);
         fallbackSeoSetting = data.seoSetting;
-        console.log("category page seo fallback", fallbackSeoSetting);
       } catch (error) {
         console.log("Failed to fetch fallback SEO data:", error);
       }
     }
 
-    // Use metadata API first, then fallback to existing seoSetting, then default values
     const title =
       categoryMeta?.meta_title ||
       fallbackSeoSetting?.seo_title ||
       `${
-        resolvedParams.category.charAt(0).toUpperCase() +
-        resolvedParams.category.slice(1)
+        params.category.charAt(0).toUpperCase() + params.category.slice(1)
       } - Shop Pulseit Fitness`;
 
     const description =
       categoryMeta?.meta_description ||
       fallbackSeoSetting?.seo_description ||
-      `Browse our ${resolvedParams.category} collection - Shop Pulseit Fitness`;
+      `Browse our ${params.category} collection - Shop Pulseit Fitness`;
 
     return {
       title,
@@ -125,14 +115,15 @@ export async function generateMetadata({
 
 export default async function Page({
   params,
+  searchParams,
 }: {
-  params: Promise<{ category: string }>;
+  params: { category: string };
+  searchParams: { page?: string };
 }) {
-  const resolvedParams = await params;
-
   try {
-    const data = await getData(resolvedParams.category);
-    return <CategoryPage data={data} categorySlug={resolvedParams?.category} />;
+    const page = Number(searchParams.page) || 1;
+    const data = await getData(params.category, page);
+    return <CategoryPage data={data} categorySlug={params.category} />;
   } catch (error) {
     console.log(error);
     notFound();

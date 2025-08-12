@@ -39,7 +39,8 @@ export default function RelatedProducts({
       offer_price: product.offer_price,
     };
   };
-
+  
+  console.log("related products",relatedProducts)
   return (
     <div className="font-manrope border-t pt-12">
       <h2 className="text-2xl font-bold text-center mb-8 uppercase">

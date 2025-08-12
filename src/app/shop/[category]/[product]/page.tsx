@@ -38,7 +38,7 @@ export async function generateStaticParams() {
 
   const validProducts = products.filter((p) => p.category_slug && p.slug);
 
-  console.log("Static paths count:", validProducts.length);
+  // console.log("Static paths count:", validProducts.length);
 
   return validProducts.map((p) => ({
     category: p.category_slug,

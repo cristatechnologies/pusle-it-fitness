@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BreadcrumbNav } from "@/Theme/Helpers/Breadcrumb";
+
+import DynamicPageClient from "@/Theme/page-components/custom-page/page";
 
 interface CustomPageMeta {
   slug: string;
@@ -19,7 +20,7 @@ async function fetchAllCustomPagesMeta(): Promise<CustomPageMeta[]> {
   if (allCustomPagesCache.length) return allCustomPagesCache;
 
   const res = await fetch(
-    "https://s1.shopico.in/pulseit2/api/user/metadata?custom-pages-all=true",
+    `${process.env.NEXT_PUBLIC_BASE_URL}api/user/metadata?custom-pages-all=true`,
     { next: { revalidate } }
   );
 
@@ -30,7 +31,6 @@ async function fetchAllCustomPagesMeta(): Promise<CustomPageMeta[]> {
   return allCustomPagesCache;
 }
 
-
 export async function generateStaticParams() {
   const pages = await fetchAllCustomPagesMeta();
   return pages.map((p) => ({ slug: p.slug }));
@@ -39,11 +39,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string }>; // Mark params as Promise
 }): Promise<Metadata> {
-  const resolvedParams = await params;
+  const resolvedParams = await params; // Await params first
   const pages = await fetchAllCustomPagesMeta();
-  const pageMeta = pages.find((p) => p.slug === resolvedParams.slug);
+  const pageMeta = pages.find((p) => p.slug === resolvedParams.slug); // Use resolvedParams
 
   if (!pageMeta) notFound();
 
@@ -64,34 +64,16 @@ export async function generateMetadata({
   };
 }
 
-export default async function DynamicPage({
+export default async function Page({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const resolvedParams = await params;
+  const resolvedParams = await params; // Await params first
   const pages = await fetchAllCustomPagesMeta();
-  const currentPage = pages.find((p) => p.slug === resolvedParams.slug);
+  const pageMeta = pages.find((p) => p.slug === resolvedParams.slug); // Use resolvedParams
 
-  if (!currentPage) notFound();
+  if (!pageMeta) notFound();
 
-  const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: currentPage.page_name || "", href: `/${currentPage.slug}` },
-  ];
-
-  return (
-    <>
-      <BreadcrumbNav items={breadcrumbItems} />
-      <div className="font-manrope max-w-4xl mx-auto p-4 md:p-6 min-h-[100vh]">
-        <h1 className="text-3xl font-bold mb-6 capitalize">
-          {currentPage.page_name}
-        </h1>
-        <div
-          className="prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: currentPage.description || "" }}
-        />
-      </div>
-    </>
-  );
+  return <DynamicPageClient slug={resolvedParams.slug} />;
 }
