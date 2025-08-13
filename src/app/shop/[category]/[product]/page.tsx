@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import type { ProductResponse } from "@/Theme/types/product";
 import { unstable_cache } from "next/cache";
 
-export const revalidate = 180; // 1 hour - fallback revalidation
+export const revalidate = 60; // 1 hour - fallback revalidation
 
 interface ProductMeta {
   slug: string;
@@ -23,7 +23,7 @@ const getCachedProductsMeta = unstable_cache(
         "https://s1.shopico.in/pulseit2/api/user/metadata?product-all=true",
         {
           next: {
-            revalidate: 3600,
+            revalidate: 60,
             tags: ["products-meta"],
           },
         }
@@ -54,7 +54,7 @@ const getCachedProductsMeta = unstable_cache(
   },
   ["products-metadata"],
   {
-    revalidate: 3600,
+    revalidate: 60,
     tags: ["products-meta"],
   }
 );
@@ -161,7 +161,7 @@ const getCachedProductData = unstable_cache(
     try {
       const res = await fetch(url, {
         next: {
-          revalidate: 3600,
+          revalidate: 60,
           tags: [`product-${product}`, "products"],
         },
         headers: {
@@ -198,7 +198,7 @@ const getCachedProductData = unstable_cache(
   },
   ["product-data"],
   {
-    revalidate: 3600,
+    revalidate: 60,
     tags: ["products"],
   }
 );
