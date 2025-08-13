@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import type { ProductResponse } from "@/Theme/types/product";
 import { unstable_cache } from "next/cache";
 
-export const revalidate = 3600; // 1 hour - fallback revalidation
+export const revalidate = 180; // 1 hour - fallback revalidation
 
 interface ProductMeta {
   slug: string;
