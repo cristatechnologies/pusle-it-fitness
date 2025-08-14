@@ -84,6 +84,9 @@ export default function ProductCardSlider({
 
 
 
+
+  
+
   console.log("product-card-slider",product)
   const catalogStatus = useAppSelector(
     (state) => state.website.data?.catalog_mode?.status

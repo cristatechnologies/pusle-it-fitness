@@ -18,6 +18,7 @@ async function getWebsiteSetup() {
 }
 
 async function getHomepageData() {
+  console.log("aopi callll")
   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api`);
   return res.json();
 }

@@ -35,6 +35,10 @@ const HomePage = () => {
 
 
 
+
+
+
+
   // Helper function to render only ProductSliders
   const renderContent = () => {
     const productSliders = [

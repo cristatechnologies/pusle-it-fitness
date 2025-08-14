@@ -2,40 +2,31 @@ import CategoryPage from "@/Theme/page-components/Shop/page";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-export const revalidate = 1800; // 30 minutes
-
 interface CategoryMeta {
   slug: string;
   meta_title?: string | null;
   meta_description?: string | null;
 }
 
-// cache variable so we don't re-fetch every call
-let allCategoriesCache: CategoryMeta[] | null = null;
-
-// Fetch once & cache category metadata
+// Fetch category metadata
 async function fetchAllCategoriesMeta(): Promise<CategoryMeta[]> {
-  if (allCategoriesCache) return allCategoriesCache;
-
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    // const controller = new AbortController();
+    // const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     const res = await fetch(
       "https://s1.shopico.in/pulseit2/api/user/metadata?product-category=true",
-      {
-        next: { revalidate },
-        signal: controller.signal,
-      }
+      // {
+      //   signal: controller.signal,
+      // }
     );
 
-    clearTimeout(timeoutId);
+    // clearTimeout(timeoutId);
 
     if (!res.ok) throw new Error("Failed to fetch all categories metadata");
     const data = await res.json();
 
     const categories = data.metadata || [];
-    allCategoriesCache = categories;
     return categories;
   } catch (error) {
     console.error("Error fetching categories metadata:", error);
@@ -76,8 +67,6 @@ async function getData(category?: string, page?: number) {
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
     const res = await fetch(url, {
-      next: { revalidate: 3600 },
-      cache: "force-cache",
       signal: controller.signal,
     });
 
@@ -103,7 +92,7 @@ export async function generateMetadata({
 
     console.log(`[generateMetadata] Called for category: ${category}`);
 
-    // Fetch categories metadata - this should be cached consistently
+    // Fetch categories metadata
     const categories = await fetchAllCategoriesMeta();
     const categoryMeta = categories.find((c) => c.slug === category);
 
@@ -142,8 +131,7 @@ export async function generateMetadata({
       };
     }
 
-    // Since your API returns meta_title and meta_description for all categories,
-    // we should always have metadata. Use static fallbacks if somehow missing.
+    // Use static fallbacks if somehow missing.
     const title =
       categoryMeta.meta_title ||
       "Shop Premium Fitness Equipment - Pulseit Fitness";
