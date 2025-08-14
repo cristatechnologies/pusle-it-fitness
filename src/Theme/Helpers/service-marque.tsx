@@ -23,7 +23,7 @@ export default function AnnouncementMarquee() {
         {service?.map((item, index) => (
           <div
             key={index}
-            className="inline-block font-manrope   bg-[var(--primary-color)]  font-semibold text-[15px] leading-[15px] tracking-wide mx-4"
+            className="inline-block font-manrope   bg-[#f8f8f8]   font-semibold text-[15px] leading-[15px] tracking-wide mx-4"
           >
             <span className="mx-2">•</span>
             {item.description}

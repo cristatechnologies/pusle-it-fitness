@@ -779,9 +779,9 @@ const CheckoutPage = () => {
         {" "}
         checkout{" "}
       </div>
-     
-          {/* Billing & Shipping Address Section */}
-           <div className="container lg:px-[50px] py-8 font-roboto text-[14px] font-[600]">
+
+      {/* Billing & Shipping Address Section */}
+      <div className="container lg:px-[50px] py-8 font-roboto text-[14px] font-[600]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Address Section */}
           {showAddressForm ? (
@@ -789,7 +789,9 @@ const CheckoutPage = () => {
           ) : (
             <div className="lg:col-span-2">
               <div className="border p-6 mb-8">
-                <h2 className="text-xl font-bold mb-6 uppercase">Select Address</h2>
+                <h2 className="text-xl font-bold mb-6 uppercase">
+                  Select Address
+                </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   {checkoutData.addresses.length > 0 ? (
@@ -928,7 +930,9 @@ const CheckoutPage = () => {
                     ) : (
                       <>
                         <div className="mb-2">
-                          <span className="font-bold">Shipping Cost: </span>
+                          <span className="font-bold">
+                            {pincodeCheck.shippingRule}{" "}
+                          </span>
                           <span>
                             {currency_icon}
                             {pincodeCheck.shippingCost}

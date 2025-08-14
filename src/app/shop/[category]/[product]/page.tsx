@@ -123,21 +123,23 @@ export async function generateMetadata({
       };
     }
 
+
+    console.log("meta values ",meta)
     return {
-      title: meta.seo_title || `${product} - ${category} - Pulseit Fitness`,
+      title: meta.seo_title ,
       description:
-        meta.seo_description || `Shop ${product} in our ${category} collection`,
+        meta.seo_description ,
       robots: "index,follow",
       openGraph: {
-        title: meta.seo_title || `${product} - Pulseit Fitness`,
+        title: meta.seo_title ,
         description:
-          meta.seo_description || `Shop ${product} at Pulseit Fitness`,
+          meta.seo_description ,
       },
       twitter: {
         card: "summary_large_image",
-        title: meta.seo_title || `${product} - Pulseit Fitness`,
+        title: meta.seo_title ,
         description:
-          meta.seo_description || `Shop ${product} at Pulseit Fitness`,
+          meta.seo_description ,
       },
     };
   } catch (error) {
