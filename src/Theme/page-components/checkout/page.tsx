@@ -52,7 +52,7 @@ import { useWindowSize } from "react-use";
 const CheckoutPage = () => {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"billing" | "shipping">("billing");
+
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const [showCouponInput, setShowCouponInput] = useState(false);
@@ -68,17 +68,13 @@ const CheckoutPage = () => {
   const [states, setStates] = useState<{ id: number; name: string }[]>([]);
   const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBillingAddress, setSelectedBillingAddress] = useState<
-    string | null
-  >(null);
-  const [selectedShippingAddress, setSelectedShippingAddress] = useState<
-    string | null
-  >(null);
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [pincodeCheck, setPincodeCheck] = useState<PincodeCheckResponse | null>(
     null
   );
+  
   const [loadingPincode, setLoadingPincode] = useState(false);
   const { currency_icon } = settings();
   const [formData, setFormData] = useState({
@@ -118,15 +114,15 @@ const CheckoutPage = () => {
     { label: "Checkout", href: "/checkout" },
   ];
 
-  const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
+   const handleFormChange = (
+     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+   ) => {
+     const { id, value } = e.target;
+     setFormData((prev) => ({
+       ...prev,
+       [id]: value,
+     }));
+   };
 
 
   const handleApplyCoupon = async () => {
@@ -181,126 +177,100 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleSubmitAddress = async () => {
-    try {
-      const addressData = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.streetAddress,
-        type: activeTab === "billing" ? "1" : "2", // 1 for billing, 2 for shipping
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-        zip_code: formData.zipCode,
-      };
+ const handleSubmitAddress = async () => {
+   try {
+     const addressData = {
+       name: `${formData.firstName} ${formData.lastName}`,
+       email: formData.email,
+       phone: formData.phone,
+       address: formData.streetAddress,
+       type: "1", // Combined address type
+       country: formData.country,
+       state: formData.state,
+       city: formData.city,
+       zip_code: formData.zipCode,
+     };
 
-      const response = await createAddress(addressData);
-      toast.success(response.notification);
+     const response = await createAddress(addressData);
+     toast.success(response.notification);
 
-      // Refresh addresses list
-      const data = await fetchCheckoutData();
-      setCheckoutData(data);
+     const data = await fetchCheckoutData();
+     setCheckoutData(data);
+     setShowAddressForm(false);
 
-      // Close the form
-      setShowAddressForm(false);
+     setFormData({
+       firstName: "",
+       lastName: "",
+       companyName: "",
+       country: "",
+       streetAddress: "",
+       apartment: "",
+       city: "",
+       state: "",
+       zipCode: "",
+       phone: "",
+       email: "",
+       orderNotes: "",
+     });
+   } catch (error) {
+     console.error("Address submission error:", error);
+     toast.error(
+       error instanceof Error ? error.message : "Failed to save address"
+     );
+   }
+ };
 
-      // Reset form data if needed
-      setFormData({
-        firstName: "",
-        lastName: "",
-        companyName: "",
-        country: "",
-        streetAddress: "",
-        apartment: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        phone: "",
-        email: "",
-        orderNotes: "",
-      });
-    } catch (error) {
-      console.error("Address submission error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save address"
-      );
-    }
-  };
+ useEffect(() => {
+   const loadCheckoutData = async () => {
+     try {
+       const data = await fetchCheckoutData();
+       setCheckoutData(data);
 
-  useEffect(() => {
-    const loadCheckoutData = async () => {
-      try {
-        const data = await fetchCheckoutData();
-        setCheckoutData(data);
+       // Find default address (either billing or shipping)
+       const defaultAddress = data.addresses.find(
+         (addr) => addr.default_billing === 1 || addr.default_shipping === 1
+       );
 
-        // Find default addresses
-        const defaultBilling = data.addresses.find(
-          (addr) => addr.default_billing === 1
-        );
-        const defaultShipping = data.addresses.find(
-          (addr) => addr.default_shipping === 1
-        );
+       // Set first address as default if no default exists
+       let addressId = defaultAddress ? defaultAddress.id.toString() : null;
+       if (!addressId && data.addresses.length > 0) {
+         addressId = data.addresses[0].id.toString();
+       }
 
-        // Set first address as default if no default exists
-        let billingId = defaultBilling ? defaultBilling.id.toString() : null;
-        let shippingId = defaultShipping ? defaultShipping.id.toString() : null;
+       setSelectedAddress(addressId);
 
-        if (!billingId && data.addresses.length > 0) {
-          billingId = data.addresses[0].id.toString();
-        }
+       // Trigger pincode check if address exists
+       if (addressId) {
+         handleAddressSelect(addressId);
+       }
+     } catch (error: unknown) {
+       if (axios.isAxiosError(error)) {
+         console.log(error);
+         const message = error.response?.data?.message;
+         if (message === "Your shopping cart is empty") {
+           setOrderError("Your shopping cart is empty");
+           setCheckoutData(null);
+         } else {
+           setOrderError("Something went wrong. Please try again later.");
+         }
+       }
+     } finally {
+       setLoading(false);
+     }
+   };
 
-        if (!shippingId && data.addresses.length > 0) {
-          shippingId = data.addresses[0].id.toString();
-        }
-
-        setSelectedBillingAddress(billingId);
-        setSelectedShippingAddress(shippingId);
-
-        // Trigger pincode check if shipping address exists
-        if (shippingId) {
-          handleShippingAddressSelect(shippingId);
-        }
-      } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          console.log(error);
-
-          const message = error.response?.data?.message;
-
-          if (message === "Your shopping cart is empty") {
-            setOrderError("Your shopping cart is empty");
-            setCheckoutData(null); // just to be sure
-          } else {
-            setOrderError("Something went wrong. Please try again later.");
-          }
-        }
-      } finally {
-       
-          setLoading(false);
-     
-      }
-    };
-
-    loadCheckoutData();
-  }, []);
-
+   loadCheckoutData();
+ }, []);
   const handleDeleteAddress = async (addressId: string) => {
     try {
       const response = await deleteAddress(Number(addressId));
-
-      // Success case - API returns { notification: "Delete Successfully" }
       toast.success(response.notification);
 
-      // Refresh the checkout data to get updated addresses
       const data = await fetchCheckoutData();
       setCheckoutData(data);
 
-      // Reset selected addresses if they were deleted
-      if (selectedBillingAddress === addressId) {
-        setSelectedBillingAddress(null);
-      }
-      if (selectedShippingAddress === addressId) {
-        setSelectedShippingAddress(null);
+      if (selectedAddress === addressId) {
+        setSelectedAddress(null);
       }
     } catch (error) {
       console.error("Delete address error:", error);
@@ -310,23 +280,23 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleShippingAddressSelect = async (addressId: string) => {
-    setSelectedShippingAddress(addressId);
-    setLoadingPincode(true);
-    try {
-      const response = await checkPincodeServiceability(addressId);
-      setPincodeCheck(response);
-      // If not serviceable, reset payment method
-      if (!response.serviceable) {
-        setSelectedPaymentMethod("");
-      }
-    } catch (error) {
-      console.log("Failed to check pincode serviceability:", error);
-      setPincodeCheck(null);
-    } finally {
-      setLoadingPincode(false);
-    }
-  };
+ const handleAddressSelect = async (addressId: string) => {
+   setSelectedAddress(addressId);
+   setLoadingPincode(true);
+   try {
+     const response = await checkPincodeServiceability(addressId);
+     setPincodeCheck(response);
+     if (!response.serviceable) {
+       setSelectedPaymentMethod("");
+     }
+   } catch (error) {
+     console.log("Failed to check pincode serviceability:", error);
+     setPincodeCheck(null);
+   } finally {
+     setLoadingPincode(false);
+   }
+ };
+
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -342,126 +312,121 @@ const CheckoutPage = () => {
     loadInitialData();
   }, []);
 
-  const handleCountryChange = async (countryId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      country: countryId.toString(),
-      state: "",
-      city: "",
-    }));
+ const handleCountryChange = async (countryId: number) => {
+   setFormData((prev) => ({
+     ...prev,
+     country: countryId.toString(),
+     state: "",
+     city: "",
+   }));
 
-    try {
-      const statesData = await fetchStatesByCountry(countryId);
-      setStates(statesData);
-      setCities([]); // Reset cities when country changes
-    } catch (error) {
-      toast.error("Failed to load states");
-      console.log("States error:", error);
-    }
-  };
+   try {
+     const statesData = await fetchStatesByCountry(countryId);
+     setStates(statesData);
+     setCities([]);
+   } catch (error) {
+     toast.error("Failed to load states");
+     console.log("States error:", error);
+   }
+ };
 
-  const handleStateChange = async (stateId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      state: stateId.toString(),
-      city: "",
-    }));
+ const handleStateChange = async (stateId: number) => {
+   setFormData((prev) => ({
+     ...prev,
+     state: stateId.toString(),
+     city: "",
+   }));
 
-    try {
-      const citiesData = await fetchCitiesByState(stateId);
-      setCities(citiesData);
-    } catch (error) {
-      toast.error("Failed to load cities");
-      console.log("Cities error:", error);
-    }
-  };
+   try {
+     const citiesData = await fetchCitiesByState(stateId);
+     setCities(citiesData);
+   } catch (error) {
+     toast.error("Failed to load cities");
+     console.log("Cities error:", error);
+   }
+ };
 
-  const handlePlaceOrder = async () => {
-    if (!selectedPaymentMethod) {
-      setOrderError("Please select a payment method");
-      return;
-    }
+ const handlePlaceOrder = async () => {
+   if (!selectedPaymentMethod) {
+     setOrderError("Please select a payment method");
+     return;
+   }
 
-    if (!selectedShippingAddress) {
-      setOrderError("Please select a shipping address");
-      return;
-    }
+   if (!selectedAddress) {
+     setOrderError("Please select an address");
+     return;
+   }
 
-    setPlacingOrder(true);
+   setPlacingOrder(true);
 
-    try {
-      if (selectedPaymentMethod === "cod") {
-        // Handle COD payment
-        const result = await handleCashOnDelivery(
-          selectedShippingAddress,
-          selectedBillingAddress || selectedShippingAddress,
-          pincodeCheck?.shippingCost || 0,
-          pincodeCheck?.shippingRule || ""
-        );
+   try {
+     if (selectedPaymentMethod === "cod") {
+       const result = await handleCashOnDelivery(
+         selectedAddress,
+         selectedAddress,
+         pincodeCheck?.shippingCost || 0,
+         pincodeCheck?.shippingRule || ""
+       );
 
-        if (result.success) {
-          console.log(result);
-          toast.success(result.message);
-          router.push(`/profile/orders/${result.order_id}`);
-        } else {
-          setOrderError(result.message || "Failed to place COD order");
-        }
-        return;
-      }
+       if (result.success) {
+         console.log(result);
+         toast.success(result.message);
+         router.push(`/profile/orders/${result.order_id}`);
+       } else {
+         setOrderError(result.message || "Failed to place COD order");
+       }
+       return;
+     }
 
-      switch (selectedPaymentMethod) {
-        case "stripe":
-          const { stripePromise, orderDetails } = await handleStripePayment(
-            pincodeCheck?.shippingRule || "",
-            pincodeCheck?.shippingCost !== undefined
-              ? String(pincodeCheck.shippingCost)
-              : "0",
-            selectedShippingAddress,
-            couponCode,
-            selectedBillingAddress || selectedShippingAddress
-          );
-          setStripePromise(stripePromise);
-          setOrderDetails(orderDetails);
-          setShowStripeForm(true);
-          break;
+     switch (selectedPaymentMethod) {
+       case "stripe":
+         const { stripePromise, orderDetails } = await handleStripePayment(
+           pincodeCheck?.shippingRule || "",
+           pincodeCheck?.shippingCost !== undefined
+             ? String(pincodeCheck.shippingCost)
+             : "0",
+           selectedAddress,
+           couponCode,
+           selectedAddress
+         );
+         setStripePromise(stripePromise);
+         setOrderDetails(orderDetails);
+         setShowStripeForm(true);
+         break;
 
-        case "phonepe":
-          const phonePeOrderDetails = await handlePhonePePayment(
-            pincodeCheck?.shippingRule || "",
-            pincodeCheck?.shippingCost !== undefined
-              ? String(pincodeCheck.shippingCost)
-              : "0",
-            selectedShippingAddress,
-            couponCode,
-            selectedBillingAddress || selectedShippingAddress
-          );
+       case "phonepe":
+         const phonePeOrderDetails = await handlePhonePePayment(
+           pincodeCheck?.shippingRule || "",
+           pincodeCheck?.shippingCost !== undefined
+             ? String(pincodeCheck.shippingCost)
+             : "0",
+           selectedAddress,
+           couponCode,
+           selectedAddress
+         );
 
-          console.log(phonePeOrderDetails);
-          if (phonePeOrderDetails.success === true)
-            router.push(phonePeOrderDetails.redirectUrl);
-          break;
+         console.log(phonePeOrderDetails);
+         if (phonePeOrderDetails.success === true)
+           router.push(phonePeOrderDetails.redirectUrl);
+         break;
 
-        case "razorpay":
-          // Handle Razorpay payment
-          break;
+       case "razorpay":
+         break;
 
-        case "paypal":
-          // Handle PayPal payment
-          break;
+       case "paypal":
+         break;
 
-        // Add cases for other payment methods as needed
-
-        default:
-          setOrderError("Selected payment method is not supported");
-          break;
-      }
-    } catch (error) {
-      setOrderError("Failed to initialize payment. Please try again.");
-      console.log("Payment initialization error:", error);
-    } finally {
-      setPlacingOrder(false);
-    }
-  };
+       default:
+         setOrderError("Selected payment method is not supported");
+         break;
+     }
+   } catch (error) {
+     setOrderError("Failed to initialize payment. Please try again.");
+     console.log("Payment initialization error:", error);
+   } finally {
+     setPlacingOrder(false);
+   }
+ };
 
   console.log(selectedPaymentMethod);
 
@@ -561,14 +526,9 @@ const CheckoutPage = () => {
   );
 
   const total = subtotal + (pincodeCheck?.shippingCost || 0);
-  const renderAddressCard = (
-    address: Address,
-    type: "billing" | "shipping"
-  ) => {
-    const isSelected =
-      type === "billing"
-        ? address.id.toString() === selectedBillingAddress
-        : address.id.toString() === selectedShippingAddress;
+
+  const renderAddressCard = (address: Address) => {
+    const isSelected = address.id.toString() === selectedAddress;
 
     return (
       <div
@@ -576,13 +536,7 @@ const CheckoutPage = () => {
         className={`border !font-manrope p-4 mb-4 cursor-pointer transition-all ${
           isSelected ? "border-black bg-gray-200" : "hover:border-black"
         }`}
-        onClick={() => {
-          if (type === "billing") {
-            setSelectedBillingAddress(address.id.toString());
-          } else {
-            handleShippingAddressSelect(address.id.toString());
-          }
-        }}
+        onClick={() => handleAddressSelect(address.id.toString())}
       >
         <div className="flex justify-between items-start">
           <div>
@@ -610,7 +564,7 @@ const CheckoutPage = () => {
         </div>
         {isSelected && (
           <div className="mt-2 text-sm text-bold text-black">
-            Selected as {type} address
+            Selected as billing & shipping address
           </div>
         )}
       </div>
@@ -619,9 +573,7 @@ const CheckoutPage = () => {
 
   const renderAddressForm = () => (
     <div className="lg:col-span-2">
-      <h2 className="text-xl font-bold mb-6 uppercase">
-        {activeTab === "billing" ? "Billing" : "Shipping"} Details
-      </h2>
+      <h2 className="text-xl font-bold mb-6 uppercase">Address Details</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
@@ -682,7 +634,6 @@ const CheckoutPage = () => {
         </select>
       </div>
 
-      {/* State Dropdown */}
       <div className="mb-6">
         <Label htmlFor="state" className="required-field">
           State *
@@ -705,7 +656,6 @@ const CheckoutPage = () => {
         </select>
       </div>
 
-      {/* City Dropdown */}
       <div className="mb-6">
         <Label htmlFor="city" className="required-field">
           City *
@@ -829,84 +779,27 @@ const CheckoutPage = () => {
         {" "}
         checkout{" "}
       </div>
-      <div className="container lg:px-[50px] py-8 font-roboto text-[14px] font-[600]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+     
           {/* Billing & Shipping Address Section */}
+           <div className="container lg:px-[50px] py-8 font-roboto text-[14px] font-[600]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Address Section */}
           {showAddressForm ? (
             renderAddressForm()
           ) : (
             <div className="lg:col-span-2">
               <div className="border p-6 mb-8">
-                <div className="flex border-b mb-6">
-                  <button
-                    className={`px-4 py-2 font-medium ${
-                      activeTab === "billing"
-                        ? "text-black border-b-2border-gray-300"
-                        : "text-gray-500"
-                    }`}
-                    onClick={() => setActiveTab("billing")}
-                  >
-                    Billing Address
-                  </button>
-                  <button
-                    className={`px-4 py-2 font-medium ${
-                      activeTab === "shipping"
-                        ? "text-black border-b-2border-gray-300"
-                        : "text-gray-500"
-                    }`}
-                    onClick={() => setActiveTab("shipping")}
-                  >
-                    Shipping Address
-                  </button>
+                <h2 className="text-xl font-bold mb-6 uppercase">Select Address</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {checkoutData.addresses.length > 0 ? (
+                    checkoutData.addresses.map((address: Address) =>
+                      renderAddressCard(address)
+                    )
+                  ) : (
+                    <p className="mb-4">No saved addresses found.</p>
+                  )}
                 </div>
-
-                {activeTab === "billing" ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {checkoutData.addresses.length > 0 ? (
-                        checkoutData.addresses.map((address: Address) =>
-                          renderAddressCard(address, "billing")
-                        )
-                      ) : (
-                        <p className="mb-4">
-                          No saved billing addresses found.
-                        </p>
-                      )}{" "}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {checkoutData.addresses.length > 0 ? (
-                        checkoutData.addresses.map((address: Address) =>
-                          renderAddressCard(address, "shipping")
-                        )
-                      ) : (
-                        <p className="mb-4">
-                          No saved shipping addresses found.
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* <div className="flex items-center space-x-2 mb-6">
-                <Checkbox
-                  id="different-shipping"
-                  checked={shipToDifferentAddress}
-                  onCheckedChange={(checked) => {
-                    setShipToDifferentAddress(checked as boolean);
-                    if (checked) {
-                      setActiveTab("shipping");
-                    } else {
-                      setActiveTab("billing");
-                    }
-                  }}
-                />
-                <Label htmlFor="different-shipping">
-                  Ship to a different address?
-                </Label>
-              </div> */}
 
                 <Button
                   variant="outline"
@@ -1142,7 +1035,7 @@ const CheckoutPage = () => {
                       <Button
                         onClick={handlePlaceOrder}
                         disabled={
-                          !selectedShippingAddress ||
+                          !selectedAddress ||
                           !selectedPaymentMethod ||
                           (pincodeCheck && !pincodeCheck.serviceable) ||
                           placingOrder
@@ -1236,5 +1129,5 @@ const CheckoutPage = () => {
 export default withAuth(CheckoutPage, {
   redirectTo: "/sign-in",
   requireAuth: true,
-  authMessage: "Please sign in to view your orders",
+  authMessage: "Please sign in to proceed with your checkout ",
 });
