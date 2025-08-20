@@ -2,7 +2,7 @@ import SignupPage from "@/Theme/page-components/signup/page";
 import { getPageMetadata } from "@/lib/utils/getPageMetadata";
 
 export async function generateMetadata() {
-  const meta = await getPageMetadata("sign-up");
+  const meta = await getPageMetadata("Sign Out");
 
   return {
     title: meta?.title || "Default Title",
