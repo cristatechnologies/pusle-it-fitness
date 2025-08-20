@@ -3,7 +3,7 @@ import { CatalogModeGuard } from "../../../middleware/CatalogModeGuard";
 import { getPageMetadata } from "@/lib/utils/getPageMetadata";
 
 export async function generateMetadata() {
-  const meta = await getPageMetadata("sign-in");
+  const meta = await getPageMetadata("Sign In");
 
   return {
     title: meta?.title || "Default Title",
