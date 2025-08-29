@@ -88,7 +88,7 @@ export interface Brand {
 };
 export interface ProductResponse {
   product: Product;
-  gellery?: Array<{ id: number; image: string }>;
+  gellery?: Array<{ id: number; image: string;product_id:number;media_type:number }>;
   relatedProducts: Product[];
   recaptchaSetting?: {
     id: number;

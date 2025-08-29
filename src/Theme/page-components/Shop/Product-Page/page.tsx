@@ -84,16 +84,16 @@ export default function ProductPage({ productData }: ProductPageProps) {
  
   
 
-  // Create gallery images array from product data
+// Replace the current galleryItems creation code with this:
 const galleryItems = [
   // First main product image
   { type: "image", url: product.thumb_image },
 
-  // Insert video if available
-  ...(product.video_link ? [{ type: "video", url: product.video_link }] : []),
-
-  // Then all the remaining gallery images
-  ...(gellery?.map((item) => ({ type: "image", url: item.image })) || []),
+  // Then all gallery items including videos
+  ...(gellery?.map((item) => ({
+    type: item.media_type === 1 ? "video" : "image",
+    url: item.image
+  })) || []),
 ];
 
 
@@ -127,6 +127,7 @@ const handleThumbnailClick = (index: number) => {
   // Get color and size variants
 
   function extractYouTubeId(url: string) {
+    // Handle both embed and watch URLs
     const match = url.match(
       /(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([^\s&?/]+)/
     );
@@ -291,27 +292,29 @@ const toggleWishlist = async () => {
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
-              {selectedItem.type === "image" ? (
-                <Image
-                  src={
-                    `${process.env.NEXT_PUBLIC_BASE_URL}${selectedItem.url}` ||
-                    "/placeholder.svg"
-                  }
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={selectedItem.url}
-                  title="Product Video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              )}
+          
+{selectedItem.type === "image" ? (
+  <Image
+    src={
+      `${process.env.NEXT_PUBLIC_BASE_URL}${selectedItem.url}` ||
+      "/placeholder.svg"
+    }
+    alt={product.name}
+    fill
+    className="object-cover"
+    priority
+  />
+) : (
+  <iframe
+    width="100%"
+    height="100%"
+    src={selectedItem.url}
+    title="Product Video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    className="w-full h-full"
+  />
+)}
 
               <button
                 onClick={nextImage}
@@ -323,36 +326,43 @@ const toggleWishlist = async () => {
             </div>
 
             <div className="flex overflow-x-auto space-x-2 snap-x snap-mandatory scrollbar-hide">
-              {galleryItems.map((item, index) => (
-                <div
-                  key={index}
-                  className={`relative w-20 h-20 flex-shrink-0 snap-center cursor-pointer border ${
-                    currentIndex === index ? "border-black" : "border-gray-200"
-                  }`}
-                  onClick={() => handleThumbnailClick(index)}
-                >
-                  {item.type === "image" ? (
-                    <Image
-                      src={
-                        `${process.env.NEXT_PUBLIC_BASE_URL}${item.url}` ||
-                        "/placeholder.svg"
-                      }
-                      alt={`Thumbnail ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <Image
-                      src={`https://img.youtube.com/vi/${extractYouTubeId(
-                        item.url
-                      )}/hqdefault.jpg`}
-                      alt="Video thumbnail"
-                      fill
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-              ))}
+{galleryItems.map((item, index) => (
+  <div
+    key={index}
+    className={`relative w-20 h-20 flex-shrink-0 snap-center cursor-pointer border ${
+      currentIndex === index ? "border-black" : "border-gray-200"
+    }`}
+    onClick={() => handleThumbnailClick(index)}
+  >
+    {item.type === "image" ? (
+      <Image
+        src={
+          `${process.env.NEXT_PUBLIC_BASE_URL}${item.url}` ||
+          "/placeholder.svg"
+        }
+        alt={`Thumbnail ${index + 1}`}
+        fill
+        className="object-cover"
+      />
+    ) : (
+      <div className="relative w-full h-full">
+        <Image
+          src={`https://img.youtube.com/vi/${extractYouTubeId(item.url)}/hqdefault.jpg`}
+          alt="Video thumbnail"
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+))}
             </div>
           </div>
 

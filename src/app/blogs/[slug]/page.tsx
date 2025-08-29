@@ -16,20 +16,30 @@ interface BlogMeta {
 let allBlogsCache: BlogMeta[] | null = null;
 
 // Fetch once & cache blog metadata
+// Update the fetchAllBlogsMeta function
 async function fetchAllBlogsMeta(): Promise<BlogMeta[]> {
   if (allBlogsCache) return allBlogsCache;
 
-  const res = await fetch(
-    "https://s1.shopico.in/pulseit2/api/user/metadata?blogs-all=true",
-    { next: { revalidate } }
-  );
+  try {
+    const res = await fetch(
+      "https://s1.shopico.in/pulseit2/api/user/metadata?blogs-all=true",
+      { next: { revalidate } }
+    );
 
-  if (!res.ok) throw new Error("Failed to fetch all blogs metadata");
-  const data = await res.json();
+    if (!res.ok) throw new Error("Failed to fetch all blogs metadata");
+    const data = await res.json();
 
-  const blogs = data.metadata || [];
-  allBlogsCache = blogs;
-  return blogs;
+    // Debug: log the API response to see its structure
+    console.log("API Response:", data);
+
+    // The API returns an object with a metadata array
+    const blogs = data.metadata || [];
+    allBlogsCache = blogs;
+    return blogs;
+  } catch (error) {
+    console.error("Error fetching blog metadata:", error);
+    return [];
+  }
 }
 
 // Pre-render only valid blogs
